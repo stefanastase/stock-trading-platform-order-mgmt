@@ -93,7 +93,6 @@ def get_user_orders(id):
 @app.route('/orders/<id>', methods=['GET'])
 def get_order(id):
     connection = None
-
     try:
         connection = psycopg2.connect(host=host, dbname=db_name, user=db_user, password=db_pass)
         cursor = connection.cursor()
@@ -134,6 +133,8 @@ def get_order(id):
 @app.route('/orders/<id>', methods=['PUT'])
 def update_order(id):
     payload = request.get_json(force=True)
+    connection = None
+
     try:
         connection = psycopg2.connect(host=host, dbname=db_name, user=db_user, password=db_pass)
         cursor = connection.cursor()
@@ -174,5 +175,31 @@ def update_order(id):
             cursor.close()
             connection.close()
 
+@app.route('/orders/<id>', methods=['DELETE'])
+def remove_order(id):
+    connection = None
+    try:
+        connection = psycopg2.connect(host=host, dbname=db_name, user=db_user, password=db_pass)
+        cursor = connection.cursor()
+
+        query = f"DELETE FROM placed WHERE \"ID\" = '{id}'"
+        cursor.execute(query)
+        connection.commit()
+
+        return Response(status=200)
+        
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+        if connection is not None:
+            cursor.close()
+            connection.close()
+
+        return Response(status=400)
+
+    finally:
+        if connection is not None:
+            cursor.close()
+            connection.close()
+            
 if __name__ == "__main__":
     app.run(debug=False)
