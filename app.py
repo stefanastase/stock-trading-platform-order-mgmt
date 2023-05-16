@@ -289,8 +289,24 @@ def get_user_orders(id):
             }
             placed_orders.append(order)
         
-        # TODO Add executed orders
-        return Response(json.dumps(placed_orders), status=200, mimetype='application/json')
+        query = f"SELECT * FROM executed WHERE \"ClientID\" = '{id}'"
+        cursor.execute(query)
+
+        records = cursor.fetchall()
+        executed_orders = []
+        for record in records:
+            order = {
+                "ID":           record[0],   
+                "Symbol":       record[2],
+                "Type":         "Buy" if record[3] == "B" else "Sell",
+                "Quantity":     record[4],
+                "Price":        record[5],
+                "Executed At":  str(record[6])
+            }
+            executed_orders.append(order)
+
+        return Response(json.dumps({'placed_orders': placed_orders, 
+                                    'executed_orders': executed_orders}), status=200, mimetype='application/json')
 
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
