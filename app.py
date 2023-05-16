@@ -3,6 +3,7 @@ from flask import Flask, request, Response
 import psycopg2
 import json
 from datetime import datetime
+import requests
 
 app = Flask(__name__)
 
@@ -11,6 +12,7 @@ host = os.getenv('HOST_NAME')
 db_name = os.getenv('DB_NAME')
 db_user = os.getenv('DB_USER')
 db_pass = os.getenv('DB_PASSWORD')
+secret = os.getenv('ORDER_SECRET')
 
 @app.route('/orders', methods=['POST'])
 def add_order():
@@ -67,8 +69,23 @@ def add_order():
                         # UPDATE placed WHERE ID = FoundID
                         query = "UPDATE placed SET \"Quantity\" = %s WHERE \"ID\" = %s"
                         cursor.execute(query, (found_quantity - remaining_quantity, found_id))
-                        connection.commit()
 
+                        processed_order = {
+                            "secret": secret,
+                            "client_id": client_id,
+                            "type": type,
+                            "symbol": symbol,
+                            "from_client_id": found_client_id,
+                            "quantity": remaining_quantity,
+                            "price": found_price
+                        }
+
+                        response = requests.post(f"http://trading-platform:5000/orders/process", json=processed_order)
+
+                        if response.status_code != 200:
+                            return Response(status=response.status_code)
+                        
+                        connection.commit()
                         remaining_quantity = 0
 
                     elif remaining_quantity == found_quantity:
@@ -86,6 +103,22 @@ def add_order():
                         # REMOVE FROM placed ORDER FOUND
                         query = f"DELETE FROM placed WHERE \"ID\" = '{found_id}'"
                         cursor.execute(query)
+
+                        processed_order = {
+                            "secret": secret,
+                            "client_id": client_id,
+                            "type": type,
+                            "symbol": symbol,
+                            "from_client_id": found_client_id,
+                            "quantity": remaining_quantity,
+                            "price": found_price
+                        }
+
+                        response = requests.post(f"http://trading-platform:5000/orders/process", json=processed_order)
+
+                        if response.status_code != 200:
+                            return Response(status=response.status_code)
+                        
                         connection.commit()
 
                         remaining_quantity = 0
@@ -105,6 +138,22 @@ def add_order():
                         # REMOVE FROM placed ORDER FOUND
                         query = f"DELETE FROM placed WHERE \"ID\" = '{found_id}'"
                         cursor.execute(query)
+
+                        processed_order = {
+                            "secret": secret,
+                            "client_id": client_id,
+                            "type": type,
+                            "symbol": symbol,
+                            "from_client_id": found_client_id,
+                            "quantity": found_quantity,
+                            "price": found_price
+                        }
+
+                        response = requests.post(f"http://trading-platform:5000/orders/process", json=processed_order)
+
+                        if response.status_code != 200:
+                            return Response(status=response.status_code)
+                        
                         connection.commit()
                         
                         remaining_quantity = remaining_quantity - found_quantity
