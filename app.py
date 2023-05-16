@@ -193,6 +193,74 @@ def add_order():
             cursor.close()
             connection.close()
 
+@app.route('/depth/<symbol>', methods=['GET'])
+def get_orders_depth(symbol):
+    min_sell = {
+        "price": 0.0,
+        "quantity": 0
+    }
+
+    max_buy = {
+        "price": 0.0,
+        "quantity": 0
+    }
+    connection = None
+    try:
+        connection = psycopg2.connect(host=host, dbname=db_name, user=db_user, password=db_pass)
+        cursor = connection.cursor()
+
+        sell_price_query = f"SELECT \"Price\" FROM placed WHERE \"Symbol\" = '{symbol}' AND \"Type\" = 'S' ORDER BY \"Price\" ASC"
+        cursor.execute(sell_price_query)
+
+        records = cursor.fetchall()
+        if len(records) != 0:
+            min_sell['price'] = float(records[0][0])
+
+            sell_quantity_query = f"SELECT SUM(\"Quantity\") \
+                                    FROM placed \
+                                    WHERE \"Symbol\" = '{symbol}' AND \"Type\" = 'S' AND \"Price\" = '{min_sell['price']}' \
+                                    GROUP BY \"Price\""
+            cursor.execute(sell_quantity_query)
+            
+            records = cursor.fetchall()
+            if len(records) != 0:
+                min_sell['quantity'] = int(records[0][0])
+        
+        buy_price_query = f"SELECT \"Price\" FROM placed WHERE \"Symbol\" = '{symbol}' AND \"Type\" = 'B' ORDER BY \"Price\" DESC"
+        cursor.execute(buy_price_query)
+
+        records = cursor.fetchall()
+        if len(records) != 0:
+            max_buy['price'] = float(records[0][0])
+            buy_quantity_query  = f"SELECT SUM(\"Quantity\") \
+                                    FROM placed \
+                                    WHERE \"Symbol\" = '{symbol}' AND \"Type\" = 'B' AND \"Price\" = '{max_buy['price']}' \
+                                    GROUP BY \"Price\""
+            cursor.execute(buy_quantity_query)
+            
+            records = cursor.fetchall()
+            if len(records) != 0:
+                max_buy['quantity'] = int(records[0][0])
+        
+        depth = {
+            "buy": max_buy,
+            "sell": min_sell
+        }
+
+        return Response(json.dumps(depth), status=200, mimetype='application/json')
+
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+        if connection is not None:
+            cursor.close()
+            connection.close()
+
+        return Response(status=400)
+
+    finally:
+        if connection is not None:
+            cursor.close()
+            connection.close()
 @app.route('/orders/client/<id>', methods=['GET'])
 def get_user_orders(id):
     connection = None
