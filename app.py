@@ -59,18 +59,20 @@ def add_order():
                 price_ok = found_price <= price if type == 'B' else found_price >= price
 
                 if remaining_quantity != 0 and price_ok:
+                    executed_at = datetime.now().isoformat()
                     if remaining_quantity < found_quantity:
                         # ORDER FILLED WITH UPDATE
                         # INSERT INTO executed ORDER PLACED
                         query = " \
                                 INSERT INTO executed (\"ClientID\", \"Symbol\", \"Type\", \"Quantity\", \"Price\", \"ExecutedAt\") \
                                 VALUES (%s, %s, %s, %s, %s, %s)"
-                        cursor.execute(query, (client_id, symbol, type, remaining_quantity, found_price, datetime.now().isoformat()))
-                        # INSERT INTO executed ORDER FOUND (partly); 
-                        query = " \
-                                INSERT INTO executed (\"ClientID\", \"Symbol\", \"Type\", \"Quantity\", \"Price\", \"ExecutedAt\") \
-                                VALUES (%s, %s, %s, %s, %s, %s)"
-                        cursor.execute(query, (found_client_id, found_symbol, found_type, remaining_quantity, found_price, datetime.now().isoformat()))
+                        cursor.execute(query, (client_id, symbol, type, remaining_quantity, found_price, executed_at))
+                        if found_client_id != 'external':
+                            # INSERT INTO executed ORDER FOUND (partly); 
+                            query = " \
+                                    INSERT INTO executed (\"ClientID\", \"Symbol\", \"Type\", \"Quantity\", \"Price\", \"ExecutedAt\") \
+                                    VALUES (%s, %s, %s, %s, %s, %s)"
+                            cursor.execute(query, (found_client_id, found_symbol, found_type, remaining_quantity, found_price, executed_at))
                         # UPDATE placed WHERE ID = FoundID
                         query = "UPDATE placed SET \"Quantity\" = %s WHERE \"ID\" = %s"
                         cursor.execute(query, (found_quantity - remaining_quantity, found_id))
@@ -99,12 +101,13 @@ def add_order():
                         query = " \
                                 INSERT INTO executed (\"ClientID\", \"Symbol\", \"Type\", \"Quantity\", \"Price\", \"ExecutedAt\") \
                                 VALUES (%s, %s, %s, %s, %s, %s)"
-                        cursor.execute(query, (client_id, symbol, type, remaining_quantity, found_price, datetime.now().isoformat()))
-                        # INSERT INTO executed ORDER FOUND
-                        query = " \
-                                INSERT INTO executed (\"ClientID\", \"Symbol\", \"Type\", \"Quantity\", \"Price\", \"ExecutedAt\") \
-                                VALUES (%s, %s, %s, %s, %s, %s)"
-                        cursor.execute(query, (found_client_id, found_symbol, found_type, found_quantity, found_price, datetime.now().isoformat()))
+                        cursor.execute(query, (client_id, symbol, type, remaining_quantity, found_price, executed_at))
+                        if found_client_id != 'external':
+                            # INSERT INTO executed ORDER FOUND
+                            query = " \
+                                    INSERT INTO executed (\"ClientID\", \"Symbol\", \"Type\", \"Quantity\", \"Price\", \"ExecutedAt\") \
+                                    VALUES (%s, %s, %s, %s, %s, %s)"
+                            cursor.execute(query, (found_client_id, found_symbol, found_type, found_quantity, found_price, executed_at))
                         # REMOVE FROM placed ORDER FOUND
                         query = f"DELETE FROM placed WHERE \"ID\" = '{found_id}'"
                         cursor.execute(query)
@@ -134,12 +137,13 @@ def add_order():
                         query = " \
                                 INSERT INTO executed (\"ClientID\", \"Symbol\", \"Type\", \"Quantity\", \"Price\", \"ExecutedAt\") \
                                 VALUES (%s, %s, %s, %s, %s, %s)"
-                        cursor.execute(query, (client_id, symbol, type, found_quantity, found_price, datetime.now().isoformat())) 
+                        cursor.execute(query, (client_id, symbol, type, found_quantity, found_price, executed_at)) 
                         # INSERT INTO executed ORDER FOUND (partly); 
-                        query = " \
-                                INSERT INTO executed (\"ClientID\", \"Symbol\", \"Type\", \"Quantity\", \"Price\", \"ExecutedAt\") \
-                                VALUES (%s, %s, %s, %s, %s, %s)"
-                        cursor.execute(query, (found_client_id, found_symbol, found_type, found_quantity, found_price, datetime.now().isoformat()))
+                        if found_client_id != 'external':
+                            query = " \
+                                    INSERT INTO executed (\"ClientID\", \"Symbol\", \"Type\", \"Quantity\", \"Price\", \"ExecutedAt\") \
+                                    VALUES (%s, %s, %s, %s, %s, %s)"
+                            cursor.execute(query, (found_client_id, found_symbol, found_type, found_quantity, found_price, executed_at))
                         # REMOVE FROM placed ORDER FOUND
                         query = f"DELETE FROM placed WHERE \"ID\" = '{found_id}'"
                         cursor.execute(query)
