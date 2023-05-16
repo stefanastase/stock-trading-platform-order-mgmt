@@ -47,6 +47,11 @@ def add_order():
             for row in records:
                 found_id = row[0]
                 found_client_id = row[1]
+
+                # Don't execute buy/sell orders belogning to same user
+                if found_client_id == client_id:
+                    continue
+
                 found_symbol = row[2]
                 found_type = row[3]
                 found_quantity = row[4]
