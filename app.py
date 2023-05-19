@@ -11,8 +11,8 @@ app = Flask(__name__)
 host = os.getenv('HOST_NAME')
 db_name = os.getenv('DB_NAME')
 db_user = os.getenv('DB_USER')
-db_pass = os.getenv('DB_PASSWORD')
-secret = os.getenv('ORDER_SECRET')
+db_pass_file = os.getenv('DB_PASSWORD_FILE')
+secret_file = os.getenv('ORDER_SECRET_FILE')
 
 @app.route('/orders', methods=['POST'])
 def add_order():
@@ -29,9 +29,17 @@ def add_order():
     connection = None
 
     try:
+        file = open(secret_file, "r")
+        secret = file.read()
+        file.close()
+
+        file = open(db_pass_file, "r")
+        db_pass = file.read()
+        file.close()
+
         connection = psycopg2.connect(host=host, dbname=db_name, user=db_user, password=db_pass)
         cursor = connection.cursor()
-
+        
         if type == 'B':
             search_query = f"SELECT * FROM placed WHERE \"Symbol\" = '{symbol}' AND \"Type\" = '{searched_type}' ORDER BY \"Price\" ASC"
         else:
@@ -196,7 +204,6 @@ def add_order():
         if connection is not None:
             cursor.close()
             connection.close()
-
 @app.route('/depth/<symbol>', methods=['GET'])
 def get_orders_depth(symbol):
     min_sell = {
@@ -209,7 +216,12 @@ def get_orders_depth(symbol):
         "quantity": 0
     }
     connection = None
+    
     try:
+        file = open(db_pass_file, "r")
+        db_pass = file.read()
+        file.close()
+        
         connection = psycopg2.connect(host=host, dbname=db_name, user=db_user, password=db_pass)
         cursor = connection.cursor()
 
@@ -270,6 +282,9 @@ def get_user_orders(id):
     connection = None
 
     try:
+        file = open(db_pass_file, "r")
+        db_pass = file.read()
+        file.close()
         connection = psycopg2.connect(host=host, dbname=db_name, user=db_user, password=db_pass)
         cursor = connection.cursor()
 
@@ -325,6 +340,10 @@ def get_user_orders(id):
 def get_order(id):
     connection = None
     try:
+        file = open(db_pass_file, "r")
+        db_pass = file.read()
+        file.close()
+
         connection = psycopg2.connect(host=host, dbname=db_name, user=db_user, password=db_pass)
         cursor = connection.cursor()
 
@@ -367,6 +386,10 @@ def update_order(id):
     connection = None
 
     try:
+        file = open(db_pass_file, "r")
+        db_pass = file.read()
+        file.close()
+
         connection = psycopg2.connect(host=host, dbname=db_name, user=db_user, password=db_pass)
         cursor = connection.cursor()
         query = "\
@@ -410,6 +433,10 @@ def update_order(id):
 def remove_order(id):
     connection = None
     try:
+        file = open(db_pass_file, "r")
+        db_pass = file.read()
+        file.close()
+        
         connection = psycopg2.connect(host=host, dbname=db_name, user=db_user, password=db_pass)
         cursor = connection.cursor()
 
