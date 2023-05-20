@@ -190,7 +190,7 @@ def add_order():
         
             return Response(json.dumps({'id' : id}), status=201, mimetype='application/json')
 
-        return Response(json.dumps({"message": "order placed and filled"}), status=201, mimetype='application/json')
+        return Response(json.dumps({"message": "order placed and filled"}), status=200, mimetype='application/json')
     
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
